@@ -3,3 +3,6 @@ kakame taiga
 grimgow jackerjack
 abarai renji
 madaraime ikaku
+git log
+git add
+git push --all
