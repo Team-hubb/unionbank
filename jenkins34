@@ -1,0 +1,46 @@
+node{
+    def mavenHome = tool name:'maven3.9.6'
+stage('1. clone the code'){
+    git "https://github.com/Zbantar/maven-web-application"
+   //sh "git clone https://github.com/Zbantar/maven-web-application"
+    //bat "git clone https://github.com/Zbantar/maven-web-application"
+}
+stage('2. maven build'){
+   //sh "/var/lib/jenkins/tools/hudson.tasks.Maven_MavenInstallation/maven3.9.6/bin/mvn package"
+    sh "${mavenHome}/bin/mvn package"
+}
+stage('3. execute code quality'){
+    sh "${mavenHome}/bin/mvn sonar:sonar"
+}
+stage('4. upload artifact to nexus'){
+    sh "${mavenHome}/bin/mvn deploy"
+    
+    //sh "/var/lib/jenkins/tools/hudson.tasks.Maven_MavenInstallation/maven3.9.6/bin/mvn deploy"
+
+}
+stage('5. deploy to uat'){
+    deploy adapters: [tomcat9(credentialsId: 'tomcatcredential', path: '', url: 'http://18.222.227.217:8080/')], contextPath: null, war: 'target/*war'
+}
+stage('6. manual approval'){
+    sh " echo 'please review and approve' "
+    timeout(time:300, unit: 'MINUTES')
+   {
+       input message: 'application ready for deployment, please review and approve'
+   }
+}
+stage('7. deploy to prod'){
+deploy adapters: [tomcat9(credentialsId: 'tomcatcredential', path: '', url: 'http://18.222.227.217:8080/')], contextPath: null, war: 'target/*war'
+}
+stage('8.application performance monitoring '){
+      echo " 'application performance monitoring' "
+      echo " 'application performance monitoring in progress' "
+}
+stage('9. email notification'){
+    sh " echo 'create email notification to resolve any issues that may arise' "
+    emailext body: '''The build and deployment status for zack-app are as follows
+
+
+Regards
+Zackari Ngando''', recipientProviders: [developers(), upstreamDevelopers(), requestor(), contributor()], subject: 'Job status', to: 'zackaribantar@yahoo.com'
+}
+}
